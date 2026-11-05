@@ -9,6 +9,8 @@ type Session = {
   createdRoomId: string | null
   profile: Profile | null
   createRoom(roomId: string, profile: Profile): void
+  /** The host's Peer got a different id (`unavailable-id` retry). */
+  renameRoom(roomId: string): void
 }
 
 const SessionContext = createContext<Session | null>(null)
@@ -20,8 +22,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setCreatedRoomId(roomId)
     setProfile(p)
   }
+  const renameRoom = (roomId: string) => setCreatedRoomId(roomId)
   return (
-    <SessionContext value={{ createdRoomId, profile, createRoom }}>{children}</SessionContext>
+    <SessionContext value={{ createdRoomId, profile, createRoom, renameRoom }}>{children}</SessionContext>
   )
 }
 

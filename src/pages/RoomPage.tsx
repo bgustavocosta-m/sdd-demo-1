@@ -1,29 +1,43 @@
 import { useState } from 'react'
-import { useParams } from 'react-router'
+import { useNavigate, useParams } from 'react-router'
 import { GameScreen } from '../components/GameScreen'
 import { NameForm } from '../components/NameForm'
+import { TerminalScreen, type TerminalReason } from '../components/TerminalScreen'
 import type { Profile } from '../net/protocol'
 import { shareUrl } from '../net/roomId'
 import { useGuestRoom } from '../net/useGuestRoom'
 import { useHostRoom } from '../net/useHostRoom'
 import { useSession } from '../session'
 
-/** Room state machine (#5): profile → (connecting | waiting) → playing → game-over. */
+const TERMINAL: readonly string[] = ['not-found', 'room-full', 'opponent-left']
+const isTerminal = (phase: string): phase is TerminalReason => TERMINAL.includes(phase)
+
+/** Room state machine (#5): profile → (connecting | waiting) → playing → game-over,
+ * plus terminal not-found | room-full | opponent-left. */
 export function RoomPage() {
   const { id = '' } = useParams()
   const { createdRoomId, profile } = useSession()
 
   // Host only if this tab created the room; everyone else is a guest.
+  // The host keeps a fixed key: an `unavailable-id` retry renames the room
+  // (and the URL) without remounting the hook that owns the Peer.
   return createdRoomId === id && profile ? (
-    <HostRoom key={id} roomId={id} profile={profile} />
+    <HostRoom key="host" roomId={id} profile={profile} />
   ) : (
     <GuestRoom key={id} roomId={id} />
   )
 }
 
-function HostRoom({ roomId, profile }: { roomId: string; profile: Profile }) {
-  const { phase, opponent, game, move, error } = useHostRoom(roomId, profile)
+function HostRoom({ roomId: initialRoomId, profile }: { roomId: string; profile: Profile }) {
+  const { renameRoom } = useSession()
+  const navigate = useNavigate()
+  const { roomId, phase, opponent, game, move } = useHostRoom(initialRoomId, profile, (id) => {
+    renameRoom(id)
+    navigate(`/room/${id}`, { replace: true })
+  })
   const url = shareUrl(roomId)
+
+  if (isTerminal(phase)) return <TerminalScreen reason={phase} />
 
   return (
     <main data-phase={phase}>
@@ -40,14 +54,15 @@ function HostRoom({ roomId, profile }: { roomId: string; profile: Profile }) {
       {(phase === 'playing' || phase === 'game-over') && opponent && (
         <GameScreen me={profile} opponent={opponent} myMark="X" game={game} onMove={move} />
       )}
-      {phase === 'error' && <p>Connection error: {error}</p>}
     </main>
   )
 }
 
 function GuestRoom({ roomId }: { roomId: string }) {
   const [profile, setProfile] = useState<Profile | null>(null)
-  const { phase, host, game, move, error } = useGuestRoom(roomId, profile)
+  const { phase, host, game, move } = useGuestRoom(roomId, profile)
+
+  if (isTerminal(phase)) return <TerminalScreen reason={phase} />
 
   return (
     <main data-phase={profile ? phase : 'profile'}>
@@ -59,7 +74,6 @@ function GuestRoom({ roomId }: { roomId: string }) {
       {(phase === 'playing' || phase === 'game-over') && host && game && profile && (
         <GameScreen me={profile} opponent={host} myMark="O" game={game} onMove={move} />
       )}
-      {phase === 'error' && <p>Connection error: {error}</p>}
     </main>
   )
 }
