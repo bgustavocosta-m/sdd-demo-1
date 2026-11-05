@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useParams } from 'react-router'
+import { GameScreen } from '../components/GameScreen'
 import { NameForm } from '../components/NameForm'
 import type { Profile } from '../net/protocol'
 import { shareUrl } from '../net/roomId'
@@ -7,6 +8,7 @@ import { useGuestRoom } from '../net/useGuestRoom'
 import { useHostRoom } from '../net/useHostRoom'
 import { useSession } from '../session'
 
+/** Room state machine (#5): profile → (connecting | waiting) → playing → game-over. */
 export function RoomPage() {
   const { id = '' } = useParams()
   const { createdRoomId, profile } = useSession()
@@ -20,11 +22,11 @@ export function RoomPage() {
 }
 
 function HostRoom({ roomId, profile }: { roomId: string; profile: Profile }) {
-  const { phase, opponent, error } = useHostRoom(roomId, profile)
+  const { phase, opponent, game, move, error } = useHostRoom(roomId, profile)
   const url = shareUrl(roomId)
 
   return (
-    <main>
+    <main data-phase={phase}>
       <h1>Room</h1>
       {phase === 'connecting' && <p>Opening room…</p>}
       {phase === 'waiting' && (
@@ -35,10 +37,8 @@ function HostRoom({ roomId, profile }: { roomId: string; profile: Profile }) {
           </p>
         </>
       )}
-      {phase === 'connected' && opponent && (
-        <p data-testid="connected">
-          Connected: {profile.name} vs {opponent.name}
-        </p>
+      {(phase === 'playing' || phase === 'game-over') && opponent && (
+        <GameScreen me={profile} opponent={opponent} myMark="X" game={game} onMove={move} />
       )}
       {phase === 'error' && <p>Connection error: {error}</p>}
     </main>
@@ -47,19 +47,17 @@ function HostRoom({ roomId, profile }: { roomId: string; profile: Profile }) {
 
 function GuestRoom({ roomId }: { roomId: string }) {
   const [profile, setProfile] = useState<Profile | null>(null)
-  const { phase, host, error } = useGuestRoom(roomId, profile)
+  const { phase, host, game, move, error } = useGuestRoom(roomId, profile)
 
   return (
-    <main>
+    <main data-phase={profile ? phase : 'profile'}>
       <h1>Room</h1>
       {!profile && (
         <NameForm submitLabel="Join" onSubmit={(name) => setProfile({ name, avatar: '' })} />
       )}
       {phase === 'connecting' && <p>Connecting…</p>}
-      {phase === 'connected' && host && profile && (
-        <p data-testid="connected">
-          Connected: {host.name} vs {profile.name}
-        </p>
+      {(phase === 'playing' || phase === 'game-over') && host && game && profile && (
+        <GameScreen me={profile} opponent={host} myMark="O" game={game} onMove={move} />
       )}
       {phase === 'error' && <p>Connection error: {error}</p>}
     </main>

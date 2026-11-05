@@ -25,8 +25,7 @@ test('/room/:id without a profile shows a name input and Join', () => {
   expect(screen.getByRole('button', { name: 'Join' })).toBeTruthy()
 })
 
-test('/ also shows the temporary hot-seat board', () => {
+test('/ no longer shows the hot-seat board', () => {
   renderAt('/')
-  expect(screen.getAllByRole('button', { name: /^Cell/ })).toHaveLength(9)
-  expect(screen.getByRole('status').textContent).toBe("X's turn")
+  expect(screen.queryAllByRole('button', { name: /^Cell/ })).toHaveLength(0)
 })
