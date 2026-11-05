@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { GameScreen } from '../components/GameScreen'
-import { NameForm } from '../components/NameForm'
+import { ProfileForm } from '../components/ProfileForm'
 import { TerminalScreen, type TerminalReason } from '../components/TerminalScreen'
+import { WaitingScreen } from '../components/WaitingScreen'
 import type { Profile } from '../net/protocol'
 import { shareUrl } from '../net/roomId'
 import { useGuestRoom } from '../net/useGuestRoom'
@@ -43,14 +44,7 @@ function HostRoom({ roomId: initialRoomId, profile }: { roomId: string; profile:
     <main data-phase={phase}>
       <h1>Room</h1>
       {phase === 'connecting' && <p>Opening room…</p>}
-      {phase === 'waiting' && (
-        <>
-          <p>Waiting for opponent…</p>
-          <p>
-            Share this link: <a href={url}>{url}</a>
-          </p>
-        </>
-      )}
+      {phase === 'waiting' && <WaitingScreen url={url} profile={profile} />}
       {(phase === 'playing' || phase === 'game-over') && opponent && (
         <GameScreen me={profile} opponent={opponent} myMark="X" game={game} onMove={move} />
       )}
@@ -67,9 +61,7 @@ function GuestRoom({ roomId }: { roomId: string }) {
   return (
     <main data-phase={profile ? phase : 'profile'}>
       <h1>Room</h1>
-      {!profile && (
-        <NameForm submitLabel="Join" onSubmit={(name) => setProfile({ name, avatar: '' })} />
-      )}
+      {!profile && <ProfileForm submitLabel="Join" onSubmit={setProfile} />}
       {phase === 'connecting' && <p>Connecting…</p>}
       {(phase === 'playing' || phase === 'game-over') && host && game && profile && (
         <GameScreen me={profile} opponent={host} myMark="O" game={game} onMove={move} />

@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router'
-import { NameForm } from '../components/NameForm'
+import { ProfileForm } from '../components/ProfileForm'
+import type { Profile } from '../net/protocol'
 import { newRoomId } from '../net/roomId'
 import { useSession } from '../session'
 
@@ -7,16 +8,16 @@ export function HomePage() {
   const { createRoom } = useSession()
   const navigate = useNavigate()
 
-  const create = (name: string) => {
+  const create = (profile: Profile) => {
     const id = newRoomId()
-    createRoom(id, { name, avatar: '' })
+    createRoom(id, profile)
     navigate(`/room/${id}`)
   }
 
   return (
     <main>
       <h1>Tic-tac-toe</h1>
-      <NameForm submitLabel="Create room" onSubmit={create} />
+      <ProfileForm submitLabel="Create room" onSubmit={create} />
     </main>
   )
 }
