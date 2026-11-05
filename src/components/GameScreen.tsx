@@ -10,9 +10,10 @@ interface GameScreenProps {
   myMark: Mark
   game: GameState
   onMove(cell: number): void
+  onRematch(): void
 }
 
-export function GameScreen({ me, opponent, myMark, game, onMove }: GameScreenProps) {
+export function GameScreen({ me, opponent, myMark, game, onMove, onRematch }: GameScreenProps) {
   const myTurn = game.result === null && game.turn === myMark
   return (
     <section aria-label="Game">
@@ -32,6 +33,11 @@ export function GameScreen({ me, opponent, myMark, game, onMove }: GameScreenPro
           if (myTurn && game.board[cell] === null) onMove(cell)
         }}
       />
+      {game.result !== null && (
+        <button type="button" onClick={onRematch}>
+          Rematch
+        </button>
+      )}
     </section>
   )
 }
