@@ -13,12 +13,14 @@ function renderAt(path: string) {
   )
 }
 
-test('/ renders the home placeholder', () => {
+test('/ shows a name input and Create room', () => {
   renderAt('/')
-  expect(screen.getByText('Home')).toBeTruthy()
+  expect(screen.getByLabelText('Your name')).toBeTruthy()
+  expect(screen.getByRole('button', { name: 'Create room' })).toBeTruthy()
 })
 
-test('/room/:id renders the room placeholder with the id', () => {
-  renderAt('/room/abc')
-  expect(screen.getByTestId('room-id').textContent).toBe('abc')
+test('/room/:id without a profile shows a name input and Join', () => {
+  renderAt('/room/ttt-abc0123456')
+  expect(screen.getByLabelText('Your name')).toBeTruthy()
+  expect(screen.getByRole('button', { name: 'Join' })).toBeTruthy()
 })
