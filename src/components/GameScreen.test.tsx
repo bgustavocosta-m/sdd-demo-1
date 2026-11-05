@@ -18,6 +18,21 @@ test('on my turn, clicking a cell calls onMove', () => {
   expect(onMove).toHaveBeenCalledWith(4)
 })
 
+test('the header shows both players and highlights whose turn it is', () => {
+  render(
+    <GameScreen
+      me={{ name: 'Ana', avatar: '🦊' }}
+      opponent={{ name: 'Bea', avatar: '🐼' }}
+      myMark="O"
+      game={newGame('X')}
+      onMove={() => {}}
+    />,
+  )
+  const turn = document.querySelector('[aria-current="true"]')!
+  expect(turn.textContent).toBe('🐼BeaX')
+  expect(screen.getByText('Ana').closest('.player')!.textContent).toBe('🦊AnaO')
+})
+
 test('out of turn, clicking does nothing', () => {
   const onMove = vi.fn()
   render(<GameScreen me={bea} opponent={me} myMark="O" game={newGame('X')} onMove={onMove} />)

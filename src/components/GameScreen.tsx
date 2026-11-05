@@ -1,6 +1,7 @@
 import type { GameState, Mark } from '../game/ticTacToe'
 import type { Profile } from '../net/protocol'
 import { Board } from './Board'
+import { PlayerHeader } from './PlayerHeader'
 import { statusText } from './statusText'
 
 interface GameScreenProps {
@@ -13,12 +14,14 @@ interface GameScreenProps {
 
 export function GameScreen({ me, opponent, myMark, game, onMove }: GameScreenProps) {
   const myTurn = game.result === null && game.turn === myMark
-  const theirMark = myMark === 'X' ? 'O' : 'X'
   return (
     <section aria-label="Game">
-      <p>
-        {me.name} ({myMark}) vs {opponent.name} ({theirMark})
-      </p>
+      <PlayerHeader
+        me={me}
+        opponent={opponent}
+        myMark={myMark}
+        turn={game.result === null ? game.turn : null}
+      />
       <p className="status" role="status">
         {statusText(game, myMark, opponent.name)}
       </p>
