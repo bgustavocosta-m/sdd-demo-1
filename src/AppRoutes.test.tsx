@@ -25,6 +25,14 @@ test('/room/:id without a profile shows a name input and Join', () => {
   expect(screen.getByRole('button', { name: 'Join' })).toBeTruthy()
 })
 
+test('both routes use the shared ProfileForm with the 16-emoji grid', () => {
+  renderAt('/')
+  expect(screen.getAllByRole('radio')).toHaveLength(16)
+  cleanup()
+  renderAt('/room/ttt-abc0123456')
+  expect(screen.getAllByRole('radio')).toHaveLength(16)
+})
+
 test('/ no longer shows the hot-seat board', () => {
   renderAt('/')
   expect(screen.queryAllByRole('button', { name: /^Cell/ })).toHaveLength(0)
