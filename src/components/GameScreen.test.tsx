@@ -26,6 +26,7 @@ test('the header shows both players and highlights whose turn it is', () => {
       myMark="O"
       game={newGame('X')}
       onMove={() => {}}
+      onRematch={() => {}}
     />,
   )
   const turn = document.querySelector('[aria-current="true"]')!
