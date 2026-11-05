@@ -54,3 +54,8 @@ export function applyMove(state: GameState, player: Mark, cell: number): MoveRes
   const { result, winLine } = checkResult(board)
   return { ok: true, state: { ...state, board, turn: other(player), result, winLine } }
 }
+
+/** A fresh game where the player who didn't start the last one starts. Marks never change. */
+export function rematch(state: GameState): GameState {
+  return newGame(other(state.starter))
+}

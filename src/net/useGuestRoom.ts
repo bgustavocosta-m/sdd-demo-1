@@ -15,6 +15,7 @@ export type GuestRoom = {
   host: Profile | null
   game: GameState | null
   move(cell: number): void
+  rematch(): void
 }
 
 /** Connects to the host whose Peer id is `roomId`. Idle until `profile` is set.
@@ -102,6 +103,12 @@ export function useGuestRoom(roomId: string, profile: Profile | null): GuestRoom
     connRef.current?.send(msg)
   }, [])
 
+  /** The host decides whether the game is over and broadcasts the new state. */
+  const rematch = useCallback(() => {
+    const msg: GuestMsg = { type: 'rematch' }
+    connRef.current?.send(msg)
+  }, [])
+
   const roomPhase: GuestPhase = !profile
     ? 'idle'
     : ending
@@ -111,5 +118,5 @@ export function useGuestRoom(roomId: string, profile: Profile | null): GuestRoom
           ? 'game-over'
           : 'playing'
         : 'connecting'
-  return { phase: roomPhase, host, game, move }
+  return { phase: roomPhase, host, game, move, rematch }
 }

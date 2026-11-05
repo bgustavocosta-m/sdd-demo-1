@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { applyMove, checkResult, newGame, type Cell, type GameState, type Mark } from './ticTacToe'
+import { applyMove, checkResult, newGame, rematch, type Cell, type GameState, type Mark } from './ticTacToe'
 
 function boardWith(cells: number[], mark: Mark): Cell[] {
   const board: Cell[] = Array(9).fill(null)
@@ -110,5 +110,42 @@ describe('applyMove', () => {
 
   test.each([-1, 9, 1.5, Number.NaN])('rejects out-of-range cell %s', (cell) => {
     expect(applyMove(newGame('X'), 'X', cell)).toEqual({ ok: false, reason: 'out-of-range' })
+  })
+})
+
+describe('rematch', () => {
+  const play = (g: GameState, cells: number[]) =>
+    cells.reduce((s, c) => {
+      const r = applyMove(s, s.turn, c)
+      if (!r.ok) throw new Error(r.reason)
+      return r.state
+    }, g)
+
+  test('clears the board and result, flips the starter, and gives the new starter the turn', () => {
+    const won = play(newGame('X'), [0, 3, 1, 4, 2])
+    expect(won.result).toEqual({ winner: 'X' })
+    const next = rematch(won)
+    expect(next).toEqual({
+      board: Array(9).fill(null),
+      turn: 'O',
+      starter: 'O',
+      result: null,
+      winLine: null,
+    })
+  })
+
+  test('the starter alternates X, O, X across games', () => {
+    const g1 = newGame('X')
+    const g2 = rematch(play(g1, [0, 3, 1, 4, 2]))
+    const g3 = rematch(play(g2, [0, 3, 1, 4, 2]))
+    expect([g1.starter, g2.starter, g3.starter]).toEqual(['X', 'O', 'X'])
+    expect(g3.turn).toBe('X')
+  })
+
+  test('does not mutate the old state', () => {
+    const won = play(newGame('X'), [0, 3, 1, 4, 2])
+    const copy = structuredClone(won)
+    rematch(won)
+    expect(won).toEqual(copy)
   })
 })

@@ -31,7 +31,7 @@ export function RoomPage() {
 function HostRoom({ roomId: initialRoomId, profile }: { roomId: string; profile: Profile }) {
   const { renameRoom } = useSession()
   const navigate = useNavigate()
-  const { roomId, phase, opponent, game, move } = useHostRoom(initialRoomId, profile, (id) => {
+  const { roomId, phase, opponent, game, move, rematch } = useHostRoom(initialRoomId, profile, (id) => {
     renameRoom(id)
     navigate(`/room/${id}`, { replace: true })
   })
@@ -52,7 +52,7 @@ function HostRoom({ roomId: initialRoomId, profile }: { roomId: string; profile:
         </>
       )}
       {(phase === 'playing' || phase === 'game-over') && opponent && (
-        <GameScreen me={profile} opponent={opponent} myMark="X" game={game} onMove={move} />
+        <GameScreen me={profile} opponent={opponent} myMark="X" game={game} onMove={move} onRematch={rematch} />
       )}
     </main>
   )
@@ -60,7 +60,7 @@ function HostRoom({ roomId: initialRoomId, profile }: { roomId: string; profile:
 
 function GuestRoom({ roomId }: { roomId: string }) {
   const [profile, setProfile] = useState<Profile | null>(null)
-  const { phase, host, game, move } = useGuestRoom(roomId, profile)
+  const { phase, host, game, move, rematch } = useGuestRoom(roomId, profile)
 
   if (isTerminal(phase)) return <TerminalScreen reason={phase} />
 
@@ -72,7 +72,7 @@ function GuestRoom({ roomId }: { roomId: string }) {
       )}
       {phase === 'connecting' && <p>Connecting…</p>}
       {(phase === 'playing' || phase === 'game-over') && host && game && profile && (
-        <GameScreen me={profile} opponent={host} myMark="O" game={game} onMove={move} />
+        <GameScreen me={profile} opponent={host} myMark="O" game={game} onMove={move} onRematch={rematch} />
       )}
     </main>
   )

@@ -1,6 +1,6 @@
 import Peer, { type DataConnection } from 'peerjs'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { applyMove, newGame, type GameState, type Mark } from '../game/ticTacToe'
+import { applyMove, newGame, rematch as nextGame, type GameState, type Mark } from '../game/ticTacToe'
 import { stateMsg } from './gameSync'
 import { startHeartbeat, type Heartbeat } from './heartbeat'
 import { isGuestMsg, type HostMsg, type Profile } from './protocol'
@@ -20,6 +20,7 @@ export type HostRoom = {
   opponent: Profile | null
   game: GameState
   move(cell: number): void
+  rematch(): void
 }
 
 const HOST: Mark = 'X'
@@ -59,14 +60,27 @@ export function useHostRoom(
     onRoomIdChangeRef.current = onRoomIdChange
   })
 
-  /** Validate and apply; on success store and broadcast. Rejected moves change nothing. */
-  const apply = useCallback((player: Mark, cell: number) => {
-    const r = applyMove(gameRef.current, player, cell)
-    if (!r.ok) return
-    gameRef.current = r.state
-    setGame(r.state)
-    guestRef.current?.send(stateMsg(r.state))
+  /** Store the new state and broadcast it to the guest. */
+  const commit = useCallback((state: GameState) => {
+    gameRef.current = state
+    setGame(state)
+    guestRef.current?.send(stateMsg(state))
   }, [])
+
+  /** Validate and apply; rejected moves change nothing. */
+  const apply = useCallback(
+    (player: Mark, cell: number) => {
+      const r = applyMove(gameRef.current, player, cell)
+      if (r.ok) commit(r.state)
+    },
+    [commit],
+  )
+
+  /** Either player may restart once the game is over; no accept step (#4). */
+  const restart = useCallback(() => {
+    if (gameRef.current.result === null) return
+    commit(nextGame(gameRef.current))
+  }, [commit])
 
   useEffect(() => {
     let peer: Peer
@@ -105,6 +119,8 @@ export function useHostRoom(
           send(conn, stateMsg(gameRef.current))
         } else if (data.type === 'move') {
           apply(GUEST, data.cell)
+        } else if (data.type === 'rematch') {
+          restart()
         }
       })
       conn.on('close', () => end('opponent-left'))
@@ -154,11 +170,11 @@ export function useHostRoom(
       window.removeEventListener('pagehide', shutdown)
       shutdown()
     }
-  }, [firstId, profile, apply])
+  }, [firstId, profile, apply, restart])
 
   const move = useCallback((cell: number) => apply(HOST, cell), [apply])
 
   const roomPhase: HostPhase =
     phase === 'connected' ? (game.result ? 'game-over' : 'playing') : phase
-  return { roomId, phase: roomPhase, opponent, game, move }
+  return { roomId, phase: roomPhase, opponent, game, move, rematch: restart }
 }
